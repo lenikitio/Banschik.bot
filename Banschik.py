@@ -17,6 +17,25 @@ logging.basicConfig(
 
 # Создаём словарь критериев:
 test_bani = {}
+critetia = {'name_bani': "А насколько обширен местный банный комплекс?",
+            'vastness': "А как русская парная?",
+            'rusbani': "Про сауну, что скажешь?",
+            'sauna' : "Ну а хамам, хамам как?",
+            'hamam' : "А с безопаснотью как, вещички есть куда спрятать?",
+            'storage' : "Иновации есть или тут старая добрая классика?",
+            'inovation' : "Еда как местная?",
+            'food' : "С алкоголём, что пиво, водка есть?",
+            'bar' : "Бани то красивые, есть чем полюбоваться?",
+            'decor' : "Там нормально убираются или кругом срач?",
+            'clean' : "Места для купания как? Есть где нормально отмокнуть?",
+            'pool' : "С обслуживанием что?",
+            'service' : "Что по ракам",
+            'crayfish' : "Насколько эти бани аутентичны? Чувствуется банный колорит",
+            'authenticity' : "А кроме самих бань, есть чем скрасить досуг?",
+            'entertainment' : "Ну и самое главное, что по цене",
+            'price' : "Фух, ну вроде всё спросил, внесу в базу"}
+question_list = list(critetia)
+count = 1
 
 
 # Метод команды /start
@@ -30,7 +49,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start_test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Убираем кнопки
     await update.callback_query.message.edit_reply_markup(None)
-
     # Меняем текст сообщения
     text_сhat = "Запрос принят, в личной беседе о бане и поговорим"
     await update.callback_query.edit_message_text(text_сhat)
@@ -45,13 +63,22 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await context.bot.send_message(chat_id = user_id, text= "И в каких банях были?")
     return 1
 
-async def get_baniname(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def get_bani(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     global test_bani
-    test_bani['name_bani'] = update.message.text
+    global question_list
+    global count
+    global critetia
+    crit = question_list[count - 1]
+    question = critetia[crit]
+    test_bani[crit] = update.message.text
     user_id = update.effective_user.id
-    await context.bot.send_message(chat_id = user_id, text= "А насколько обширен местный банный комплекс?")
+    await context.bot.send_message(chat_id = user_id, text= question)
+    if(count != 17):
+        count += 1
+        return count
+    count = 1
     return ConversationHandler.END
-    
+
 
 
 if __name__ == '__main__':
@@ -63,15 +90,18 @@ if __name__ == '__main__':
     start_handler = CommandHandler("start", start)
     application.add_handler(start_handler)
 
+# Для создание ветви необходима череда последовательных Хэндлеров, представляющая из себя словарь, тут мы его и создаём
+    dict_question = {}
+    for i in range(1, 18):
+        dict_question[i] = [MessageHandler(filters.TEXT & ~filters.COMMAND, get_bani)]
+
     # Ветвь тестовых вопросов
     handler = ConversationHandler(
         [CommandHandler("test", test)],
-        {
-            1 : [MessageHandler(filters.TEXT & ~filters.COMMAND, get_baniname)]
-        },
+        dict_question,
         fallbacks=[]
     )
-
+        
     application.add_handler(handler)
 
     # Наш обработчит inline кнопок (тут кнопки с callback = "test")
